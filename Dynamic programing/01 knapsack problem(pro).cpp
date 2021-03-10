@@ -14,7 +14,7 @@ int bag(int weight[], int value[], int n, int w) {
 
 	for (int row = 1; row < n; row++) {
 		for (int col = w; col > 0; col--) {
-			// update from tail to head: !!!
+
 			if (weight[row] <= col) {
 				pick = value[row] + dp[col - weight[row]];
 				notpick = dp[col];

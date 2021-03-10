@@ -1,6 +1,7 @@
 Initialize the repository in current root
     $ git init
 
+（A: origin）
 Pull remote host A's branch: master，and let it be merged with local host branch1
     $ git pull A master:branch1
 
@@ -36,3 +37,13 @@ If your want to add a new directory, just add a setting of sparse-checkout, then
 
 Git Update remote repository to local host
 https://www.cnblogs.com/H-xiaofeng/p/13396224.html
+
+search your info:
+$ git config user.name
+$ git config user.email
+reset your info:
+$ git config --global user.name "xxx"
+$ git config --global user.email "xxx"
+
+upload your repositories:
+https://www.cnblogs.com/du-hong/p/9921214.html
