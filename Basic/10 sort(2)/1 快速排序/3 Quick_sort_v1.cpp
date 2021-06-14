@@ -75,7 +75,7 @@ void quick_sort_inner(int* arr, int l, int r) {
 	}
 		
 	int temp = arr[l];
-	int old_l = l--;
+	int old_l = l;
 	int old_r = r++;
 	while (1) {
 		while (arr[--r] > temp);
