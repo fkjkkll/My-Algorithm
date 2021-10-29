@@ -73,17 +73,16 @@ void quick_sort_inner(int* arr, int l, int r) {
 		insert_sort(arr + l, r - l + 1);
 		return;
 	}
-		
 	int temp = arr[l];
 	int old_l = l;
 	int old_r = r++;
 	while (1) {
-		while (arr[--r] > temp);
+		while (r > l && arr[--r] > temp);
 		if (r > l)
 			arr[l] = arr[r];
 		else
 			break;
-		while (arr[++l] < temp);
+		while (r > l && arr[++l] < temp);
 		if (r > l)
 			arr[r] = arr[l];
 		else

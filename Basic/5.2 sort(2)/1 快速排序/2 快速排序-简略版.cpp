@@ -41,12 +41,12 @@ void quickSort(int a[], int l, int r) {
 		int i = l;
 		int j = r + 1;
 		while (1) {
-			while (a[--j] > tmp);
+			while (i < j && a[--j] > tmp);
 			if (i < j)
 				a[i] = a[j];
 			else
 				break;
-			while (a[++i] < tmp);
+			while (i < j && a[++i] < tmp);
 			if (i < j)
 				a[j] = a[i];
 			else
