@@ -1,7 +1,7 @@
 // 并查集类（需要将集合元素映射为整数）
 class UF {
 public:
-	UF(int _n) :n(_n), count(0), parent(_n, -1) {}
+	UF(int _n) :count(_n), parent(_n, -1) {}
 	int getCount() { return count; }
 	bool isConnected(int a, int b) {
 		int class1 = find(a);
@@ -21,6 +21,7 @@ public:
 			parent[class2] += parent[class1];
 			parent[class1] = class2;
 		}
+		--count;
 	}
 
 private:
@@ -30,7 +31,6 @@ private:
 		return parent[pos] = find(parent[pos]);
 	}
 
-	int n;
 	int count;
 	vector<int> parent;
 };
