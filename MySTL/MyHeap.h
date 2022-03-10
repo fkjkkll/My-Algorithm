@@ -63,7 +63,7 @@ void MyHeap<T>::push(const T& e) {
 	}
 	data[_size++] = e;
 	int son = _size - 1;
-	int father = (_size - 1) / 2;
+	int father = (son - 1) / 2;
 	for (; son != father; ) {
 		if (data[father] > e)
 			data[son] = data[father];
