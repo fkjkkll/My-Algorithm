@@ -1,3 +1,5 @@
+// Leetcode 1584 连接所有点的最小费用
+// points = [[0,0],[2,2],[3,10],[5,2],[7,0]] 求坐标轴上这几个点的最小生成树的路径和
 class UFSet{
 public:
     UFSet(int _n):count(_n), parent(_n, -1){}
