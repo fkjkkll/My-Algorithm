@@ -46,25 +46,23 @@ void MyHeap<T>::adjustHeap(int pos) {
 	T tmp = data[pos];
 	int i;
 	for (i = pos*2+1; i < _size; i = i*2+1) {
-		if (i + 1 < _size && data[i] > data[i + 1])
+		if (i + 1 < _size && data[i] > data[i + 1]) // 两个孩子选则最小的
 			++i;
-		if (data[i] > tmp)
+		if (data[i] > tmp) // 最小的都比待调整的结点大，则停止
 			break;
 		else 
 			data[(i - 1) / 2] = data[i];
 	}
-	data[(i - 1) / 2] = tmp;
+	data[(i - 1) / 2] = tmp; // 插入father位置
 }
 
 template<class T>
 void MyHeap<T>::push(const T& e) {
-	if (_size == _capacity) {
-		this->resize(_size * 2);
-	}
+	if (_size == _capacity) this->resize(_size * 2); // 扩容
 	data[_size++] = e;
 	int son = _size - 1;
-	int father = (_size - 1) / 2;
-	for (; son != father; ) {
+	int father = (son - 1) / 2;
+	for (; son != father; ) { // 结束条件
 		if (data[father] > e)
 			data[son] = data[father];
 		else
