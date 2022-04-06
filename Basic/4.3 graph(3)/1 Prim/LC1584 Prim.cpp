@@ -25,11 +25,15 @@ public:
         int ret = 0;
         while(!pq.empty()){
             Node cur = pq.top(); pq.pop();
+            // 跟Dijkstra一样，但人家遇到终点直接可以break
+            // 因为采用优先队列的方式，队列里会有重复，第一次接触的肯定是最优解，后面
+            // 重复的都是大于最优解的，之际跳过，或者你用一个数组，对应节点存储dist
+            // 每次存储比较取最小值，但是空间浪费太大了，不如这样好
             if(dist[cur.node] == 0) continue;
             dist[cur.node] = 0;
             ret += cur.dis;
             for(int i=0; i<n; ++i){
-                if(graph[cur.node][i] < INT_MAX && dist[i] > graph[cur.node][i]){
+                if(dist[i] > graph[cur.node][i]){
                     dist[i] = graph[cur.node][i];
                     pq.push(Node({i, graph[cur.node][i]}));
                 }
