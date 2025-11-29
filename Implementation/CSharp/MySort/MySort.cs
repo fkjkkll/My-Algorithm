@@ -37,6 +37,45 @@
         }
     }
 
+    // 插入排序with区间
+    public static void InsertSort<T>(IList<T> arr, int l, int r) where T : IComparable<T>
+    {
+        for (int i = l + 1; i <= r; ++i)
+        {
+            var pre = i - 1;
+            var origin = arr[i];
+            for (; pre >= l; --pre)
+            {
+                if (arr[pre].CompareTo(origin) > 0)
+                    arr[pre + 1] = arr[pre];
+                else
+                    break;
+            }
+            arr[pre + 1] = origin;
+        }
+    }
+
+    // 二分插入排序
+    public static void BinaryInsertSort<T>(IList<T> arr, int l, int r) where T : IComparable<T>
+    {
+        for (int i = l + 1; i <= r; ++i)
+        {
+            var origin = arr[i];
+            int bl = l, br = i - 1;
+            while (bl <= br)
+            {
+                int bm = (bl + br) >> 1;
+                if (arr[bm].CompareTo(origin) > 0)
+                    br = bm - 1;
+                else
+                    bl = bm + 1;
+            }
+            for (int t = i; t > bl; --t)
+                arr[t] = arr[t - 1];
+            arr[bl] = origin;
+        }
+    }
+
     // 希尔排序
     public static void ShellSort<T>(IList<T> arr) where T : IComparable<T>
     {
@@ -149,5 +188,110 @@
             Merge(arr, tempList, lStart, lStart + mergeSize, arr.Count - 1);
         else if (lStart < arr.Count)
             Merge(arr, tempList, lStart, arr.Count, arr.Count - 1);
+    }
+
+    // 快速排序
+    public static void QuickSort<T>(IList<T> arr) where T : IComparable<T>
+    {
+        DoQuickSort_1(arr, 0, arr.Count - 1);
+        //DoQuickSort_Scratch(arr, 0, arr.Count - 1);
+        //DoQuickSort_Three(arr, 0, arr.Count - 1);
+    }
+
+    // 快速排序（自己随便实现的）
+    private static void DoQuickSort_1<T>(IList<T> arr, int l, int r) where T : IComparable<T>
+    {
+        if (r - l < 16)
+        {
+            InsertSort(arr, l, r);
+            return;
+        }
+        var pivot = arr[l];
+        int indexL = l + 1, indexR = r;
+        while (indexL < indexR)
+        {
+            bool moved = false;
+            while (indexL < indexR && arr[indexL].CompareTo(pivot) < 0)
+            {
+                ++indexL;
+                moved = true;
+            }
+            while (indexL < indexR && arr[indexR].CompareTo(pivot) > 0)
+            {
+                --indexR;
+                moved = true;
+            }
+            Swap(arr, indexL, indexR);
+            if (!moved)
+            {
+                ++indexL;
+                --indexR;
+            }
+        }
+        if (arr[indexL].CompareTo(pivot) >= 0)
+            --indexL;
+        Swap(arr, l, indexL);
+        DoQuickSort_1(arr, l, indexL - 1);
+        DoQuickSort_1(arr, indexL + 1, r);
+    }
+
+    // 快速排序（基础版）
+    private static void DoQuickSort_Scratch<T>(IList<T> arr, int l, int r) where T : IComparable<T>
+    {
+        if (r - l < 16)
+        {
+            InsertSort(arr, l, r);
+            return;
+        }
+        var pivot = arr[l];
+        int indexL = l, indexR = r + 1;
+        while (true)
+        {
+            // 因为左侧有哨兵，必须右侧先移动
+            while (arr[--indexR].CompareTo(pivot) > 0) ; // 左侧枢纽作为哨兵，所以这里不需要判断指针大小
+            while (indexL < indexR && arr[++indexL].CompareTo(pivot) < 0) ; // 右侧由于没有哨兵，所以需要判断指针大小
+            if (indexL < indexR)
+                Swap(arr, indexL, indexR);
+            else
+                break;
+        }
+        Swap(arr, l, indexL);
+        DoQuickSort_Scratch(arr, l, indexL - 1);
+        DoQuickSort_Scratch(arr, indexL + 1, r);
+    }
+
+    // 枢纽三选一中位数
+    private static void DoQuickSort_Three<T>(IList<T> arr, int l, int r) where T : IComparable<T>
+    {
+        // 必须进行截断，否则只有两个元素，下面的代码indexR必会越界
+        if (r - l < 16)
+        {
+            InsertSort(arr, l, r);
+            return;
+        }
+        int m = (l + r) >> 1;
+        if (arr[l].CompareTo(arr[m]) > 0)
+            Swap(arr, l, m);
+        if (arr[m].CompareTo(arr[r]) > 0)
+            Swap(arr, m, r);
+        if (arr[l].CompareTo(arr[m]) > 0)
+            Swap(arr, l, m);
+        Swap(arr, m, r - 1); // 锚点暂存右边第二位，这样即使只有两个元素，也是完全正确的
+        var pivot = arr[r - 1];
+        int indexL = l, indexR = r - 1;
+        while (true)
+        {
+            // 下面的顺序无所谓
+            while (arr[++indexL].CompareTo(pivot) < 0) ; // 左右侧都有哨兵，可以消去判断指针大小的语句
+            while (arr[--indexR].CompareTo(pivot) > 0) ; // 左右侧都有哨兵，可以消去判断指针大小的语句
+            if (indexL < indexR)
+                Swap(arr, indexL, indexR);
+            else
+                break;
+        }
+        // 需要将数换回来，由于锚点在右侧，所以需要一个大于等于锚点的值，indexL满足；indexR是小于等于锚点的值，不满足
+        Swap(arr, indexL, r - 1);
+        DoQuickSort_Three(arr, l, indexL - 1);
+        DoQuickSort_Three(arr, indexL + 1, r);
     }
 }
