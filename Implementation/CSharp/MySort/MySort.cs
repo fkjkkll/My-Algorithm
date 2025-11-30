@@ -193,9 +193,9 @@
     // 快速排序
     public static void QuickSort<T>(IList<T> arr) where T : IComparable<T>
     {
-        DoQuickSort_1(arr, 0, arr.Count - 1);
+        //DoQuickSort_1(arr, 0, arr.Count - 1);
         //DoQuickSort_Scratch(arr, 0, arr.Count - 1);
-        //DoQuickSort_Three(arr, 0, arr.Count - 1);
+        DoQuickSort_Three(arr, 0, arr.Count - 1);
     }
 
     // 快速排序（自己随便实现的）
@@ -293,5 +293,153 @@
         Swap(arr, indexL, r - 1);
         DoQuickSort_Three(arr, l, indexL - 1);
         DoQuickSort_Three(arr, indexL + 1, r);
+    }
+
+    // 基数排序
+    public static void RadixSort(IList<int> arr)
+    {
+        List<List<int>> buckets = Enumerable.Range(0, 16).Select(_ => new List<int>()).ToList();
+        uint mask = 0x0f;
+        int shiftCount = 0;
+        while (mask > 0)
+        {
+            foreach (var item in arr)
+            {
+                var index = (int)((item & mask) >> shiftCount);
+                buckets[index].Add(item);
+            }
+
+            if (buckets[0].Count == arr.Count)
+                break;
+
+            var iterator = buckets.SelectMany(e => e);
+            var i = 0;
+            foreach (var item in iterator)
+                arr[i++] = item;
+            foreach (var bucket in buckets)
+                bucket.Clear();
+            mask <<= 4;
+            shiftCount += 4;
+        }
+    }
+
+    // 基数排序（计数优化）
+    public static void RadixCountSort(IList<int> arr)
+    {
+        List<int> tempList = new(arr);
+        uint mask = 0xf;
+        int shiftCount = 0;
+        while (mask > 0)
+        {
+            List<int> counting = Enumerable.Repeat(0, 16).ToList();
+            foreach (var item in arr)
+            {
+                var index = (int)((item & mask) >> shiftCount);
+                ++counting[index];
+            }
+            if (counting[0] == arr.Count)
+                break;
+            for (int i = 1; i < counting.Count; ++i)
+                counting[i] += counting[i - 1];
+
+            // 错误！因为arr继承自上一次低基排序的顺序
+            // counting的计数又是默认从后往前
+            // 因此，对本次基数的排序必须也是从后往前，这样才能保持低基的顺序不会被打乱
+            // 它不是稳定不稳定的问题，而是排序会完全错误
+            //foreach (var item in arr)
+            //{
+            //    var index = (int)((item & mask) >> shiftCount);
+            //    tempList[--counting[index]] = item;
+            //}
+
+            // 必须是从后往前
+            for (int i = arr.Count - 1; i >= 0; --i)
+            {
+                var index = (int)((arr[i] & mask) >> shiftCount);
+                tempList[--counting[index]] = arr[i];
+            }
+
+
+            for (int i = 0; i < arr.Count; ++i)
+                arr[i] = tempList[i];
+            shiftCount += 4;
+            mask <<= 4;
+        }
+    }
+
+    // 基数排序（最高位优先）
+    public static void MSD(IList<int> arr)
+    {
+        List<int> trr = new(arr);
+        var maxItem = int.MinValue;
+        foreach (var item in trr)
+            maxItem = Math.Max(maxItem, item);
+        int shiftCount = 0;
+        uint mask = 0x0000000f;
+        while (maxItem > mask)
+        {
+            shiftCount += 4;
+            maxItem >>= 4;
+        }
+        mask <<= shiftCount; // 得到最大的遮罩
+        DoMSD(arr, trr, 0, arr.Count - 1, mask);
+    }
+
+    // 获得遮罩的额外位移次数
+    private static int ShiftCount(uint mask)
+    {
+        var single = mask & -mask; // 可以快速获取二进制最低位的1
+        int shiftCount = 0;
+        while (single > 0)
+        {
+            ++shiftCount;
+            single >>= 1;
+        }
+        return shiftCount - 1;
+    }
+
+    private static void DoMSD(IList<int> arr, IList<int> trr, int l, int r, uint mask)
+    {
+        if (l >= r || mask == 0)
+            return;
+
+        var counting = Enumerable.Repeat(0, 16).ToList();
+        var shiftCount = ShiftCount(mask);
+        // l~r计数
+        for (int i = l; i <= r; ++i)
+        {
+            var index = (int)((arr[i] & mask) >> shiftCount);
+            ++counting[index];
+
+        }
+        for (int i = 1; i < counting.Count; ++i)
+            counting[i] += counting[i - 1];
+
+        /*
+         * 从前往后，虽然不至于像LSD那样直接排序错误，但是会导致排序不稳定。之所以不会排序错误，
+         * 是因为MSD是先序遍历的递归，每一层处理时只负责分组，不会包含次级排序的信息
+         */
+        //for (int i = l; i <= r; ++i)
+        //{
+        //    var index = (int)((arr[i] & mask) >> shiftCount);
+        //    trr[--counting[index] + l] = arr[i]; // + l的偏移别忘了
+        //}
+
+        // 还是得从后往前进行
+        for (int i = r; i >= l; --i)
+        {
+            var index = (int)((arr[i] & mask) >> shiftCount);
+            trr[--counting[index] + l] = arr[i]; // + l的偏移别忘了
+        }
+
+        for (int i = l; i <= r; ++i)
+            arr[i] = trr[i];
+        for (int i = 0; i < 16; ++i)
+        {
+            if (i < 15)
+                DoMSD(arr, trr, l + counting[i], l + counting[i + 1] - 1, mask >> 4);
+            else
+                DoMSD(arr, trr, l + counting[i], r, mask >> 4);
+        }
     }
 }
