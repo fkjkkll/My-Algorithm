@@ -59,12 +59,13 @@ public class DisjointSet<T> where T : notnull
         // 因为是负数，所以反过来
         if (_parents[leftRoot] < _parents[rightRoot])
         {
-            _parents[leftRoot] += _parents[rightRoot];
             _parents[rightRoot] = leftRoot;
         }
         else
         {
-            _parents[rightRoot] += _parents[leftRoot];
+            // 因为是负数，所以--
+            if (_parents[leftRoot] == _parents[rightRoot])
+                --_parents[rightRoot];
             _parents[leftRoot] = rightRoot;
         }
     }
@@ -79,13 +80,12 @@ public class DisjointSet<T> where T : notnull
         // 因为是负数，所以反过来
         if (_parents[leftRoot] < _parents[rightRoot])
         {
+            _parents[leftRoot] += _parents[rightRoot];
             _parents[rightRoot] = leftRoot;
         }
         else
         {
-            // 因为是负数，所以--
-            if (_parents[leftRoot] == _parents[rightRoot])
-                --_parents[rightRoot];
+            _parents[rightRoot] += _parents[leftRoot];
             _parents[leftRoot] = rightRoot;
         }
     }

@@ -1,20 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
+// 创建简化版 SortedSet
 using System.Text;
 
-/// <summary>
-/// 简化的 SortedSet 实现，基于跳跃表
-/// </summary>
-/// <typeparam name="T">元素类型</typeparam>
+var rankedList = new SimpleSortedSet<string>();
+
+// 添加一些测试数据
+rankedList.Add("A", 3);
+rankedList.Add("B", 5);
+rankedList.Add("C", 11);
+rankedList.Add("D", 14);
+rankedList.Add("E", 19);
+rankedList.Add("F", 23);
+rankedList.Add("G", 25);
+rankedList.Add("H", 31);
+rankedList.Add("I", 39);
+rankedList.Add("J", 43);
+
+rankedList.Remove("A");
+rankedList.Remove("D");
+rankedList.Remove("G");
+rankedList.Remove("j");
+
+rankedList.Add("A", 3);
+rankedList.Add("D", 14);
+rankedList.Add("G", 25);
+rankedList.Add("J", 43);
+
+// 打印结构
+rankedList.PrintStructure();
+Console.WriteLine();
+
+// 测试各种功能
+Console.WriteLine("=== 功能测试 ===");
+
+// 获取排名
+Console.WriteLine($"A 的排名: {rankedList.GetReverseRank("A")}");
+Console.WriteLine($"A 的逆序排名: {rankedList.GetRank("A")}");
+
+// 获取前3名
+var top3 = rankedList.GetTopN(10);
+Console.WriteLine($"前10名: {string.Join(", ", top3)}");
+
+// 按排名范围查询
+var range = rankedList.GetRangeByRank(2, 4);
+Console.WriteLine($"GetRangeByRank: {string.Join(", ", range)}");
+
+// 按分数范围查询
+var scoreRange = rankedList.GetRangeByScore(10, 20);
+Console.WriteLine($"区间分数的人: {string.Join(", ", scoreRange)}");
+
+// 简化的 SortedSet 实现，基于跳跃表
 public class SimpleSortedSet<T> where T : IComparable<T>
 {
-    #region 节点类定义
     private class SkipListNode
     {
         public T Value { get; set; }
         public double Score { get; set; }
-        public SkipListNode[] Forward { get; set; } // 前进指针数组
         public SkipListNode Backward { get; set; }  // 后退指针
+        public SkipListNode[] Forward { get; set; } // 前进指针数组
         public int[] Span { get; set; }             // 跨度数组
 
         public SkipListNode(T value, double score, int level)
@@ -26,21 +69,17 @@ public class SimpleSortedSet<T> where T : IComparable<T>
             Backward = null;
         }
     }
-    #endregion
 
-    #region 私有字段和常量
-    private const int MAX_LEVEL = 32;        // 最大层数
-    private const double PROBABILITY = 0.5;  // 层数增长概率
+    private const int MAX_LEVEL = 32;         // 最大层数
+    private const double PROBABILITY = 0.5;   // 层数增长概率
 
-    private SkipListNode _header;            // 头节点（虚拟
-    private SkipListNode _tail;              // 尾节点（真实
-    private int _level;                      // 当前最大层数
-    private int _count;                      // 元素数量
-    private Random _random;                  // 随机数生成器
-    private Dictionary<T, double> _dict;     // 字典：Value -> Score
-    #endregion
+    private SkipListNode _header;             // 头节点（纯虚拟
+    private SkipListNode _tail;               // 尾节点（指向真实存在的
+    private int _level;                       // 当前最大层数
+    private int _count;                       // 元素数量
+    private Random _random;                   // 随机数生成器
+    private Dictionary<T, double> _dict;      // 字典：Value -> Score
 
-    #region 构造函数
     public SimpleSortedSet()
     {
         _random = new Random();
@@ -49,7 +88,7 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         _count = 0;
 
         // 初始化头节点（分数为最小值）
-        _header = new SkipListNode(default(T), double.MinValue, MAX_LEVEL);
+        _header = new SkipListNode(default, double.MinValue, MAX_LEVEL);
         _tail = null;
 
         // 初始化头节点的跨度
@@ -59,12 +98,7 @@ public class SimpleSortedSet<T> where T : IComparable<T>
             _header.Span[i] = 0;
         }
     }
-    #endregion
 
-    #region 核心方法
-    /// <summary>
-    /// 添加元素
-    /// </summary>
     public bool Add(T value, double score)
     {
         // 如果已存在，返回false（简化实现，不支持更新）
@@ -97,9 +131,9 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         {
             for (int i = _level; i < newLevel; i++)
             {
-                rank[i] = 0;
+                rank[i] = 0; // 新节点是通过虚拟head直接跳过来的，所以前面的累加span是0
                 update[i] = _header;
-                update[i].Span[i] = _count;
+                update[i].Span[i] = _count; // 后面会处理，新节点会进行中间截断
             }
             _level = newLevel;
         }
@@ -110,35 +144,29 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         // 更新指针和跨度
         for (int i = 0; i < newLevel; i++)
         {
+            // 普通的链表插入
             newNode.Forward[i] = update[i].Forward[i];
             update[i].Forward[i] = newNode;
-
+            // 更新跨度
             newNode.Span[i] = update[i].Span[i] - (rank[0] - rank[i]);
             update[i].Span[i] = (rank[0] - rank[i]) + 1;
         }
 
         // 更新更高层的跨度
         for (int i = newLevel; i < _level; i++)
-        {
             update[i].Span[i]++;
-        }
 
         // 更新后退指针
         newNode.Backward = (update[0] == _header) ? null : update[0];
         if (newNode.Forward[0] != null)
-        {
             newNode.Forward[0].Backward = newNode;
-        }
         else
-        {
             _tail = newNode; // 如果是最后一个节点，更新尾指针
-        }
 
         _count++;
         _dict[value] = score;
         return true;
     }
-
 
     public bool Remove(T value)
     {
@@ -151,15 +179,14 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         for (int i = _level - 1; i >= 0; --i)
         {
             while (current.Forward[i] != null && 
-                (current.Forward[i].Score < score ||
-                (current.Forward[i].Score == score &&
-                current.Forward[i].Value.CompareTo(value) < 0)))
+                  (current.Forward[i].Score < score ||
+                  (current.Forward[i].Score == score &&
+                   current.Forward[i].Value.CompareTo(value) < 0)))
             {
                 current = current.Forward[i];
             }
             update[i] = current;
         }
-
         
         var deleteNode = update[0].Forward[0];
         if (deleteNode == null || !deleteNode.Value.Equals(value) || Math.Abs(deleteNode.Score - score) > 1e-10)
@@ -168,11 +195,13 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         // 更新各层的指针和跨度
         for (int i = 0; i < _level; ++i)
         {
+            // 普通链表删除操作
             if (update[i].Forward[i] == deleteNode)
             {
-                update[i].Span[i] += (deleteNode.Span[i] - 1);
+                update[i].Span[i] += (deleteNode.Span[i] - 1); // +=
                 update[i].Forward[i] = deleteNode.Forward[i];
             }
+            // 该层链表不包含，仅需要改变span
             else if (update[i].Span[i] > 0)
             {
                 --update[i].Span[i];
@@ -185,7 +214,7 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         else
             _tail = deleteNode.Backward;
 
-        // 更新最高层数
+        // 更新最高层数（循环）
         while (_level > 1 && _header.Forward[_level - 1] == null)
             --_level;
 
@@ -194,9 +223,7 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         return true;
     }
 
-    /// <summary>
-    /// 获取元素的排名（从0开始，分数从低到高）
-    /// </summary>
+    // 获取元素的排名（从0开始，分数从低到高）
     public int? GetRank(T value)
     {
         if (!_dict.TryGetValue(value, out double score))
@@ -217,26 +244,19 @@ public class SimpleSortedSet<T> where T : IComparable<T>
             }
 
             if (current.Value != null && current.Value.Equals(value))
-            {
                 return rank;
-            }
         }
-
         return null;
     }
 
-    /// <summary>
-    /// 获取逆序排名（从0开始，分数从高到低）
-    /// </summary>
+    // 获取逆序排名（从0开始，分数从高到低）
     public int? GetReverseRank(T value)
     {
         int? rank = GetRank(value);
         return rank.HasValue ? _count - rank.Value + 1 : null;
     }
 
-    /// <summary>
-    /// 获取前N名（分数从高到低）
-    /// </summary>
+    // 获取前N名（分数从高到低）
     public List<T> GetTopN(int n)
     {
         if (n <= 0) return new List<T>();
@@ -255,14 +275,12 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         return result;
     }
 
-    /// <summary>
-    /// 获取分数范围内的元素（利用跳跃表特性，O(log N + M)）
-    /// </summary>
+    // 获取分数范围内的元素（利用跳跃表特性，O(log N + M)）
     public List<T> GetRangeByScore(double minScore, double maxScore)
     {
         if (minScore > maxScore) return new List<T>();
 
-        List<T> result = new List<T>();
+        List<T> result = new();
         SkipListNode current = _header;
 
         // 步骤1：使用高层索引快速定位到第一个 >= minScore 的节点 (O(log N))
@@ -317,90 +335,57 @@ public class SimpleSortedSet<T> where T : IComparable<T>
         }
         return ret;
     }
-    #endregion
 
-    #region 辅助方法
-    /// <summary>
-    /// 随机生成节点层数（抛硬币算法）
-    /// </summary>
+    // 随机生成节点层数（抛硬币算法）
     private int RandomLevel()
     {
         int level = 1;
         while (_random.NextDouble() < PROBABILITY && level < MAX_LEVEL)
-        {
-            level++;
-        }
+            ++level;
         return level;
     }
 
-    /// <summary>
-    /// 打印跳跃表结构（用于调试）
-    /// </summary>
+    // 打印跳跃表结构（用于调试）
     public void PrintStructure()
     {
         Console.WriteLine($"跳跃表结构 (元素数量: {_count}, 最大层数: {_level}):");
 
         for (int i = _level - 1; i >= 0; i--)
         {
-            Console.Write($"Level {i}: HEAD");
-            SkipListNode left = _header;
-            SkipListNode right = _header.Forward[i];
-            int position = 0;
-
-            while (right != null)
+            StringBuilder sb = new();
+            sb.Append($"Layer{i}\t");
+            SkipListNode current = _header;
+            while (current != null)
             {
-                Console.Write($" --[{left.Span[i]}]--> [{right.Value}:{right.Score}]");
-                left = right;
-                right = right.Forward[i];
-                position++;
+                sb.Append($"{current.Span[i]}\t");
+                if (current.Forward[i] != null)
+                    sb.Append(new string('\t', current.Span[i] - 1));
+                else
+                    sb.Append(new string('\t', current.Span[i]));
+                current = current.Forward[i];
             }
-            Console.WriteLine(" --> NULL");
+            Console.WriteLine(sb);
+
         }
-    }
-    #endregion
-}
-
-// 使用示例
-public class Program
-{
-    public static void Main()
-    {
-        // 创建简化版 SortedSet
-        var rankedList = new SimpleSortedSet<string>();
-
-        // 添加一些测试数据
-        rankedList.Add("A", 600);
-        rankedList.Add("B", 500);
-        rankedList.Add("C", 400);
-        rankedList.Add("D", 300);
-        rankedList.Add("E", 200);
-        rankedList.Remove("B");
-        rankedList.Remove("D");
-        rankedList.Add("B", 200);
-        rankedList.Add("D", 200);
-
-
-        // 打印结构
-        rankedList.PrintStructure();
+        var cur = _header;
+        string o = "Data\t";
+        string s = "Score\t";
+        while (cur != null)
+        {
+            if (cur.Value == null)
+            {
+                o += "Head\t";
+                s += "Head\t";
+            }
+            else
+            {
+                o += cur.Value.ToString() + '\t';
+                s += cur.Score.ToString() + '\t';
+            }
+            cur = cur.Forward[0];
+        }
         Console.WriteLine();
-
-        // 测试各种功能
-        Console.WriteLine("=== 功能测试 ===");
-
-        // 获取排名
-        Console.WriteLine($"A 的排名: {rankedList.GetReverseRank("A")}");
-        Console.WriteLine($"A 的逆序排名: {rankedList.GetRank("A")}");
-
-        // 获取前3名
-        var top3 = rankedList.GetTopN(10);
-        Console.WriteLine($"前10名: {string.Join(", ", top3)}");
-
-        // 按排名范围查询
-        var range = rankedList.GetRangeByRank(2, 4);
-        Console.WriteLine($"GetRangeByRank: {string.Join(", ", range)}");
-
-        // 按分数范围查询
-        var scoreRange = rankedList.GetRangeByScore(550, 1500);
-        Console.WriteLine($"区间分数的人: {string.Join(", ", scoreRange)}");
+        Console.WriteLine(o);
+        Console.WriteLine(s);
     }
 }
